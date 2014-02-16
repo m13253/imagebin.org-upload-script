@@ -1,0 +1,122 @@
+#!/usr/bin/env python3
+
+# The MIT License (MIT)
+#
+# Copyright (c) 2014 Star Brilliant <m13253@hotmail.com>
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+# THE SOFTWARE.
+
+USER_AGENT = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/31.0.1650.63 Safari/537.36'
+
+import os
+import random
+import sys
+import time
+try:
+    import urllib.parse
+except ImportError:
+    sys.stderr.write('Error: Make sure you are using Python 3.\n')
+    sys.exit(72)
+try:
+    import requests
+except ImportError:
+    sys.stderr.write('Error: Package python-requests is not installed, refer to http://docs.python-requests.org/en/latest/user/install/ to get it installed.\n')
+    sys.exit(72)
+
+
+def main():
+    retval = 0
+    if len(sys.argv) < 2:
+        sys.stdout.write('\nUsage: %s image1.png [ image2.jpg ... ]\nError: At least one file must be specified.\n\n' % sys.argv[0])
+        return 64
+    sys.stderr.write('Please note, by using Imagebin you agree to its Terms of Service.\n')
+    nickname = input('Please type your nickname: ')
+    if not nickname:
+        sys.stderr.write('Error: You must type your nickname.')
+        return 65
+    req_session = requests.Session()
+    req_session.headers.update({
+        'Cookie': 'imagebin_nickname=%s' % urllib.parse.quote_plus(nickname),
+        'User-Agent': USER_AGENT,
+        'Origin': 'http://imagebin.org',
+        'Referer': 'http://imagebin.org/index.php?page=add'
+    })
+    for index, arg in enumerate(sys.argv[1:]):
+        if index != 0:
+            time.sleep(random.random(4)+3)  # Wait between each upload
+        sys.stderr.write('[%s/%s] Uploading %s...\n' % (index+1, len(sys.argv)-1, arg))
+        filename = os.path.basename(arg)
+        try:
+            filestream = open(arg, 'rb')
+        except Exception:
+            sys.stderr.write('Error: Unable to open %s\n' % arg)
+            retval = retval or 2
+            continue
+        files = {'image': (filename.encode('ascii', 'replace').decode('ascii', 'replace'), filestream, probetype(filename))}
+        payload = {'nickname': nickname, 'title': '', 'description': '', 'disclaimer_agree': 'Y', 'mode': 'add', 'remember_nickname': 'Y', 'Submit': 'Submit'}
+        try:
+            req = req_session.post(
+                'http://imagebin.org/index.php',
+                allow_redirects=False,
+                data=payload,
+                files=files,
+                timeout=60
+            )
+        except Exception as e:
+            sys.stderr.write('Error: %s' % str(e))
+        try:
+            filestream.close()
+        except Exception:
+            pass
+        if req.status_code != 302:
+            sys.stderr.write('Error: Upload failed. Status code: %s != 302\n' % req.status_code)
+            retval = retval or 69
+            continue
+        try:
+            location = req.headers['Location']
+            try:
+                result = int(location)
+            except ValueError:  # Might have an error message attached, try to parse it
+                error_message = ' '.join(urllib.parse.parse_qs(urllib.parse.urlparse(location).query)['errors'])
+                sys.stderr.write('Error: %s\n' % error_message)
+                retval = retval or 69
+                continue
+            sys.stdout.write('http://imagebin.org/%s\n' % result)
+        except (KeyError, ValueError):
+            sys.stderr.write('Error: Upload failed. No result address returned.\n')
+            retval = retval or 69
+    return retval
+
+
+def probetype(filename):
+    filename = filename.lower()
+    if filename.endswith('.png'):
+        return 'image/png'
+    elif filename.endswith('.jpg') or filename.endswith('.jpeg') or filename.endswith('.jpe'):
+        return 'image/jpeg'
+    elif filename.endswith('.gif'):
+        return 'image/gif'
+    elif filename.endswith('.svg'):
+        return 'image/svg'
+    else:
+        return 'application/octet-stream'
+
+
+if __name__ == '__main__':
+    sys.exit(main())
