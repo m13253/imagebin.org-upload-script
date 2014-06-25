@@ -22,7 +22,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-USER_AGENT = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/31.0.1650.63 Safari/537.36'
+USER_AGENT = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/35.0.1916.153 Safari/537.36'
 
 import os
 import random
@@ -97,7 +97,7 @@ def main():
                 sys.stderr.write('Error: %s\n' % error_message)
                 retval = retval or 69
                 continue
-            sys.stdout.write('http://imagebin.org/%s\n' % result)
+            sys.stdout.write('http://imagebin.org/index.php?mode=image&id=%s\n' % urllib.parse.quote(result))
         except (KeyError, ValueError):
             sys.stderr.write('Error: Upload failed. No result address returned.\n')
             retval = retval or 69
