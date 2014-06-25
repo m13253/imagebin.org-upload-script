@@ -99,7 +99,7 @@ def main():
                 sys.stderr.write('Error: %s\n' % error_message)
                 retval = retval or 69
                 continue
-            sys.stdout.write('http://imagebin.org/index.php?mode=image&id=%s\n' % urllib.parse.quote(result))
+            sys.stdout.write('http://imagebin.org/index.php?mode=image&id=%s\n' % result)
         except (KeyError, ValueError):
             sys.stderr.write('Error: Upload failed. No result address returned.\n')
             retval = retval or 69
