@@ -80,6 +80,8 @@ def main():
             )
         except Exception as e:
             sys.stderr.write('Error: %s' % str(e))
+            retval = retval or 69
+            continue
         try:
             filestream.close()
         except Exception:
