@@ -59,8 +59,8 @@ def main():
     })
     for index, arg in enumerate(sys.argv[1:]):
         if index != 0:
-            time.sleep(random.random()*4+3)  # Wait between each upload
-        sys.stderr.write('[%s/%s] Uploading %s...\n' % (index+1, len(sys.argv)-1, arg))
+            time.sleep(random.random() * 4 + 3)  # Wait between each upload
+        sys.stderr.write('[%s/%s] Uploading %s...\n' % (index + 1, len(sys.argv) - 1, arg))
         filename = os.path.basename(arg)
         try:
             filestream = open(arg, 'rb')
